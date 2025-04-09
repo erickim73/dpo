@@ -7,7 +7,7 @@ def get_model_avg_final_vals(env, model, num_traj, num_step_per_traj,
                                  benchmark_model=False):
     vals = [] # List of last rewards for trajectories in test.
     for _ in range(num_traj):
-        obs, _ = env.reset() # obs same as state in our case.
+        obs = env.reset() # obs same as state in our case.
         num_iteration = 0
         action = np.zeros(obs.shape)
         first_val = None
@@ -16,7 +16,7 @@ def get_model_avg_final_vals(env, model, num_traj, num_step_per_traj,
                 action, _ = model.predict(obs)
             else:
                 action = model.get_action(obs, action)
-            obs, reward, done, _, _ = env.step(action)
+            obs, reward, done, _ = env.step(action)
             if first_val is None:
                 first_val = env.get_val(reward, action)
             num_iteration += 1

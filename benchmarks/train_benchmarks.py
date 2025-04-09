@@ -25,19 +25,18 @@ total_samples_dict = {
             }
 
 env_to_gammas_dict = {
-    'shape_boundary': [DEFAULT_GAMMA, 0.9, 0.8],
+    'shape_boundary': [DEFAULT_GAMMA, 0.9, 0.8, 0.6],
     'shape': [DEFAULT_GAMMA, 0.9, 0.8, 0.6],
-    'molecule': [DEFAULT_GAMMA, 0.9, 0.8, 0.6]
+    'molecule': [DEFAULT_GAMMA, 0.9, 0.8, 0.6],
+    'naive_shape_boundary': [DEFAULT_GAMMA, 0.9, 0.8, 0.6]
 }
 
-gammas = [DEFAULT_GAMMA]
+#gammas = [DEFAULT_GAMMA]
 
-"""
 if env_name.startswith('naive'):
     gammas = [DEFAULT_GAMMA]
 else:
     gammas = env_to_gammas_dict[env_name]
-"""
 
 print('\n\n\n\n')
 print(f'Training benchmark model: {method} on {env_name}')
