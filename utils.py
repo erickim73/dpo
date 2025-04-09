@@ -9,22 +9,22 @@ from policy import Policy
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Get correct environment
-def get_environment(env_name):
+def get_environment(env_name, **kwargs):
     if env_name == 'naive_shape_boundary':
-        return ShapeBoundary(naive=True)
+        return ShapeBoundary(naive=True, **kwargs)
     if env_name == 'shape_boundary':
-        return ShapeBoundary()
+        return ShapeBoundary(**kwargs)
     if env_name == 'naive_shape':
-        return Shape(naive=True)
+        return Shape(naive=True, **kwargs)
     if env_name == 'shape':
-        return Shape()
+        return Shape(**kwargs)
     pose = pyrosetta.pose_from_sequence('A'*8)
     # ('TTCCPSIVARSNFNVCRLPGTSEAICATYTGCIIIPGATCPGDYAN')
     # pyrosetta.pose_from_pdb("molecule_files/1AB1.pdb") #pyrosetta.pose_from_sequence('A' * 10)
     if env_name == 'naive_molecule':
-        return Molecule(pose=pose, naive=True)
+        return Molecule(pose=pose, naive=True, **kwargs)
     if env_name == 'molecule':
-        return Molecule(pose=pose)
+        return Molecule(pose=pose, **kwargs)
 
 def from_str_to_2D_arr(s):
     tokens = s[2:-2].split("],[")

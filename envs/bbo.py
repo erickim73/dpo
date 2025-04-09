@@ -1,5 +1,5 @@
 import numpy as np
-import gymnasium as gym
+import gym
 
 from collections import namedtuple
 ImgDim = namedtuple('ImgDim', 'width height')
@@ -14,6 +14,15 @@ class BBO(gym.Env):
         self.step_pow = 1.0
         self.gamma_inc = self.gamma**self.step_pow
         self.discount = 1.0
+        
+    def reset(self, seed=None):
+        if seed is not None:
+            self.rng = np.random.default_rng(seed=seed)
+        else:
+            self.rng = np.random.default_rng()
+        self.num_step = 0
+        self.discount = 1.0
+        return
 
         # Step info
         self.max_num_step = max_num_step
