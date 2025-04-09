@@ -1,5 +1,6 @@
 import numpy as np
 import imageio
+import os
 
 # Run num_traj trajectories using policy given by model on env.
 def get_model_avg_final_vals(env, model, num_traj, num_step_per_traj,
@@ -39,9 +40,12 @@ def visualize(env, model, num_step=100, benchmark_model=False,
             action, _ = model.predict(obs)
         else:
             action = model.get_action(obs, action)
-        obs, reward, done ,_, _ = env.step(action)
+        obs, reward, done, info = env.step(action)
         img = env.render()
-        images.append(img)
+        if img is not None:
+            images.append(img)
+        else:
+            print(f"Skipping frame {num_iteration} – env.render() returned None")
         vals.append(env.get_val(reward, action))
         num_iteration += 1
         if done:
@@ -50,4 +54,12 @@ def visualize(env, model, num_step=100, benchmark_model=False,
     
     # Save simulation.
     if img_path is not None:
-        imageio.mimsave(img_path, [np.array(img) for i, img in enumerate(images) if i%2 == 0], fps=20)
+        os.makedirs(os.path.dirname(img_path), exist_ok=True)
+        
+        # Filter valid frames
+        valid_frames = [np.array(img) for i, img in enumerate(images) if img is not None and i % 2 == 0]
+
+        if len(valid_frames) == 0:
+            print("⚠️ No valid frames to save. Skipping GIF creation.")
+        else:
+            imageio.mimsave(img_path, valid_frames, duration=50)

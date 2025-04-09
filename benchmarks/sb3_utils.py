@@ -3,6 +3,8 @@ import pandas as pd
 import torch
 from stable_baselines3 import PPO, SAC
 from sb3_contrib import TRPO
+from benchmarks.space_compatability_wrapper import SpaceCompatibilityWrapper
+from utils import get_environment
 
 # current directory
 cur_dir = os.path.dirname(os.path.abspath(__file__))
@@ -12,8 +14,26 @@ from utils import get_environment, str_to_list, DEVICE
 
 def get_RL_nets_architectures(env_name, on_policy=True):
     # Get architecture info from arch_file
-    df = pd.read_csv('arch.csv')
+    arch_path = os.path.join(cur_dir, "arch.csv")
+    df = pd.read_csv(arch_path)
+    
+    print("Columns in arch.csv:", df.columns)
+    
+    #strip whitespace from env_name column
+    df['env_name'] = df['env_name'].str.strip()
+    env_name = env_name.strip()
+    
+    #debug
+    print(f"Looking for architecture of environment: '{env_name}'")
+    print(f"Available envs in CSV: {df['env_name'].unique()}")
+    
     net_info = df[df['env_name']==env_name]
+    
+    if net_info.empty:
+        raise ValueError(f"Environment '{env_name}' not found in arch.csv.")
+    
+    print("Net info found:", net_info)
+    
     actor_dims = str_to_list(net_info['actor_dims'].values[0])
     critic_dims_field = 'v_critic_dims' if on_policy else 'q_critic_dims'
     critic_dims = str_to_list(net_info[critic_dims_field].values[0])
@@ -64,18 +84,25 @@ def train_benchmark_model(method, gamma, env_name, total_samples, common_dims=[]
     model_path ="models/" + env_name + '_' + method + '_' + str(gamma).replace('.', '_')
     model.save(model_path)
 
-def _load_benchmark_model(method, model_path):
-    if method == 'TRPO':
-        model = TRPO.load(model_path)
-    elif method == 'PPO':
-        model = PPO.load(model_path)
-    elif method == 'SAC':
-        model = SAC.load(model_path)
+def _load_benchmark_model(method, model_path, env):
+    # Create a custom objects dictionary to override the observation_space
+    custom_objects = {
+        "observation_space": env.observation_space,
+        "action_space": env.action_space
+    }
+    
+    if method.startswith('TRPO'):
+        model = TRPO.load(model_path, env=env, custom_objects=custom_objects)
+    elif method.startswith('PPO'):
+        model = PPO.load(model_path, env=env, custom_objects=custom_objects)
+    elif method.startswith('SAC'):
+        model = SAC.load(model_path, env=env, custom_objects=custom_objects)
     return model
 
-def setup_benchmark_model(method, env, env_name):
-    model_path = "benchmarks/models/" + env_name + '_' + method
-    model = _load_benchmark_model(method, model_path)
-    model.set_env(env)
+def setup_benchmark_model(method, env, env_name, model_version=''):
+    wrapped_env = SpaceCompatibilityWrapper(env)  # Wrap the environment
+    model_path = f"models/{env_name}_{method}{model_version}"
+    
+    model = _load_benchmark_model(method, model_path, wrapped_env)
 
     return model

@@ -2,7 +2,7 @@ from typing import Optional
 import numpy as np
 from scipy import interpolate
 import cv2
-from gymnasium import spaces
+from gym import spaces
 from envs.bbo import BBO
 
 from collections import namedtuple

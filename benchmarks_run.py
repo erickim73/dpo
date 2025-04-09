@@ -4,11 +4,11 @@ import math, collections
 import pandas as pd
 from utils import get_environment, setup_ocf_model
 from benchmarks.sb3_utils import setup_benchmark_model
-from test import get_model_avg_final_vals
+from tests import get_model_avg_final_vals
 
 DEFAULT_GAMMA = 0.99
 
-base_methods = ['OCF_zero_order'] #, 'OCF_first_order', 'TRPO', 'PPO', 'SAC']
+base_methods = ['OCF_zero_order', 'OCF_first_order', 'TRPO', 'PPO', 'SAC'] #, 'OCF_first_order', 'TRPO', 'PPO', 'SAC']
 env_names = ['shape_boundary', 'naive_shape_boundary'] #, 'shape', 'naive_shape'] 
 #['shape_boundary', 'naive_shape_boundary', 'shape', 'naive_shape', 'molecule', 'naive_molecule']
 

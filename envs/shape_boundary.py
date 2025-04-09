@@ -2,7 +2,7 @@ from typing import Optional
 import numpy as np
 from scipy.interpolate import CubicSpline
 from shapely.geometry import Polygon
-from gymnasium import spaces
+from gym import spaces
 import pygame
 from pygame import gfxdraw
 from envs.bbo import BBO
@@ -26,6 +26,8 @@ class ShapeBoundary(BBO):
         self.min_act = -1; self.max_act = 1
         self.action_space = spaces.box.Box(low=self.min_act, high=self.max_act, shape=(state_dim,), dtype=np.float32)
         self.state = None
+        self.step_size = step_size
+        self.max_num_step = max_num_step
     
         # Geometry
         self.num_coef = self.state_dim//2
@@ -73,14 +75,14 @@ class ShapeBoundary(BBO):
         # Calculate final reward
         reward = self.calculate_final_reward(val, action)
             
-        return np.array(self.state), reward, done, False, {}
+        return np.array(self.state), reward, done, {}
     
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
         super().reset(seed=seed)
         self.num_step = 0
         self.discount = 1.0
 
-        return self.reset_at(mode='half_random'), {}
+        return self.reset_at(mode='half_random')
     
     def reset_at(self, mode='random'):
         self.num_step = 0
