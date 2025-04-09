@@ -27,6 +27,8 @@ class Shape(BBO):
         self.xk, self.yk = np.mgrid[-1:1:8j, -1:1:8j]
         self.xg, self.yg = np.mgrid[-1:1:50j, -1:1:50j]
         self.viewer = ImgDim(width=self.xg.shape[0], height=self.yg.shape[1])
+        self.step_size = step_size
+        self.max_num_step = max_num_step
 
     def step(self, action):
         self.state += self.step_size *action
@@ -44,13 +46,13 @@ class Shape(BBO):
             val = 1e9
 
         reward = self.calculate_final_reward(val, action)
-        return np.array(self.state), reward, done, False, {}
+        return np.array(self.state), reward, done, {}
     
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
         super().reset(seed=seed)
         self.num_step = 0
         self.discount = 1.0
-        return self.reset_at(mode='random'), {}
+        return self.reset_at(mode='random')
     
     def reset_at(self, mode='random'):
         self.num_step = 0

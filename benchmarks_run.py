@@ -9,7 +9,7 @@ from tests import get_model_avg_final_vals
 DEFAULT_GAMMA = 0.99
 
 base_methods = ['OCF_zero_order', 'OCF_first_order', 'TRPO', 'PPO', 'SAC'] #, 'OCF_first_order', 'TRPO', 'PPO', 'SAC']
-env_names = ['shape_boundary', 'naive_shape_boundary'] #, 'shape', 'naive_shape'] 
+env_names = ['shape_boundary', 'naive_shape_boundary', 'molecule', 'naive_molecule', 'shape', 'naive_shape'] #, 'shape', 'naive_shape'] 
 #['shape_boundary', 'naive_shape_boundary', 'shape', 'naive_shape', 'molecule', 'naive_molecule']
 
 # Test basic params
@@ -31,7 +31,7 @@ num_step_per_traj_dict = {
                 }
 
 env_to_gammas_dict = {
-    'shape_boundary': set([DEFAULT_GAMMA, 0.9, 0.8]),
+    'shape_boundary': set([DEFAULT_GAMMA, 0.9, 0.8, 0.6]),
     'shape': set([DEFAULT_GAMMA, 0.9, 0.8, 0.6]),
     'molecule': set([DEFAULT_GAMMA, 0.9, 0.8, 0.6])
 }
