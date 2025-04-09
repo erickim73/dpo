@@ -102,12 +102,15 @@ Each algorithm was tested on the following environments:
 ## Key Findings
 
 1. **Best Performers By Environment:**
-   - **Shape Boundary**: SAC with γ=0.9 (5.04) and SAC with γ=0.6 (5.88)
-   - **Naive Shape Boundary**: TRPO with γ=0.99 (6.32)
-   - **Molecule**: SAC with γ=0.8 (649.26) and SAC with γ=0.99 (662.40)
-   - **Naive Molecule**: SAC with γ=0.99 (564.08)
-   - **Shape**: TRPO with γ=0.9 (5.59) and OCF_zero_order (6.08)
-   - **Naive Shape**: TRPO with γ=0.99 (6.93)
+   
+| **Environment** | **Top Score** | **Second Best** |
+|-----------------|---------------|-----------------|
+| Shape Boundary | 	SAC γ = 0.9 (5.04) | SAC γ = 0.6 (5.88) |
+| Naive Shape Boundary | TRPO γ = 0.99 (6.32) | — |
+| Molecule | 9.62 | SAC γ = 0.8 (649.26) | SAC γ = 0.99 (662.40) |
+| Naive Molecule | SAC γ = 0.99 (564.08) | — |
+| Shape | TRPO γ = 0.9 (5.59) | OCF_zero_order (6.08) |
+| Naive Shape| TRPO γ = 0.99 (6.93) | — |
 
 2. **Algorithm Performance Patterns:**
    - **SAC** performs exceptionally well on molecular optimization and certain shape boundary tasks.
