@@ -114,7 +114,7 @@ Each algorithm was tested on the following environments:
 
 2. **Algorithm Performance Patterns:**
    - **SAC** performs exceptionally well on molecular optimization and certain shape boundary tasks.
-   - **OCF** is competitive on shape‑based environments (2nd place on shape) but is mid‑pack elsewhere.
+   - **OCF** is competitive on shape‑based environments (2nd place on shape).
    - **TRPO** offers balanced performance: it wins both naïve shape tasks and is always mid‑table or better, but it trails SAC on naïve_molecule.
    - **PPO** underperforms relative to the other methods in every environment (never places in the top three).
 
