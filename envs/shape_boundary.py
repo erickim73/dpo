@@ -3,9 +3,10 @@ import numpy as np
 from scipy.interpolate import CubicSpline
 from shapely.geometry import Polygon
 from gym import spaces
-import pygame
-from pygame import gfxdraw
 from envs.bbo import BBO
+import matplotlib.pyplot as plt
+from PIL import Image
+import io
 
 MAX_ACT = 1e4
 
@@ -35,13 +36,12 @@ class ShapeBoundary(BBO):
         self.verts = None
 
         # Rendering
-        self.render_mode = 'human'
+        self.render_mode = render_mode or "human"
         self.screen_width = 600
         self.screen_height = 600
         self.screen = None
         self.clock = None
         self.isopen = True
-        self.render_mode = render_mode or "human"
 
 
     def step(self, action):
@@ -125,34 +125,24 @@ class ShapeBoundary(BBO):
         return np.array(self.state)
     
     def render(self):
-        if self.screen is None:
-            pygame.init()
-            if self.render_mode == "human":
-                pygame.display.init()
-                self.screen = pygame.display.set_mode(
-                    (self.screen_width, self.screen_height)
-                )
-            else:  # mode in "rgb_array"
-                self.screen = pygame.Surface((self.screen_width, self.screen_height))
-        if self.clock is None:
-            self.clock = pygame.time.Clock()
-        self.surf = pygame.Surface((self.screen_width, self.screen_height))
-        self.surf.fill((255, 255, 255))
-        gfxdraw.aapolygon(self.surf, self.verts, (0, 0, 0))
-        gfxdraw.filled_polygon(self.surf, self.verts, (0, 0, 0))
-        self.surf = pygame.transform.flip(self.surf, False, True)
-        self.screen.blit(self.surf, (0, 0))
-        if self.render_mode == "human":
-            pygame.event.pump()
-            self.clock.tick(self.metadata["render_fps"])
-            pygame.display.flip()
-        elif self.render_mode == "rgb_array":
-            return np.transpose(
-                np.array(pygame.surfarray.pixels3d(self.screen)), axes=(1, 0, 2)
-            )
+        if self.verts is None or len(self.verts) < 3:
+            return np.ones((256, 256, 3), dtype=np.uint8) * 255
+
+        fig, ax = plt.subplots(figsize=(4, 4), dpi=150)
+        verts_np = np.array(self.verts)
+
+        ax.fill(verts_np[:, 0], verts_np[:, 1], color='black', linewidth=2)
+        ax.set_xlim(0, self.screen_width)
+        ax.set_ylim(0, self.screen_height)
+        ax.set_aspect('equal')
+        ax.axis('off')
+
+        buf = io.BytesIO()
+        plt.tight_layout()
+        plt.savefig(buf, format='png', bbox_inches='tight', pad_inches=0)
+        plt.close(fig)
+        buf.seek(0)
+
+        image = Image.open(buf).convert('RGB')
+        return np.array(image)
      
-    def close(self):
-        if self.screen is not None:
-            pygame.display.quit()
-            pygame.quit()
-            self.isopen = False

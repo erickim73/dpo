@@ -4,6 +4,9 @@ from scipy import interpolate
 import cv2
 from gym import spaces
 from envs.bbo import BBO
+import matplotlib.pyplot as plt
+from PIL import Image
+import io
 
 from collections import namedtuple
 ImgDim = namedtuple('ImgDim', 'width height')
@@ -27,6 +30,7 @@ class Shape(BBO):
         self.xk, self.yk = np.mgrid[-1:1:8j, -1:1:8j]
         self.xg, self.yg = np.mgrid[-1:1:100j, -1:1:100j]
         self.viewer = ImgDim(width=100, height=100)
+        
         self.step_size = step_size
         self.max_num_step = max_num_step
         
@@ -79,58 +83,54 @@ class Shape(BBO):
     def render(self):
         try:
             xk, yk, xg, yg = self.xk, self.yk, self.xg, self.yg
-            gray = 255 - spline_interp(self.state.reshape(xk.shape[0], yk.shape[0]), xk, yk, xg, yg)
+            z = self.state.reshape(xk.shape[0], yk.shape[0])
+
+            # Generate binary image
+            binary = spline_interp(z, xk, yk, xg, yg)
 
             # Find contours
-            contours, _ = cv2.findContours(gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            # Create a larger canvas with vertical padding
-            shape_canvas_size = 300
-            padding_top = 50
-            canvas = np.ones((shape_canvas_size + padding_top, shape_canvas_size, 3), dtype=np.uint8) * 255
+            # Create white canvas (larger for better quality)
+            canvas_size = 512
+            canvas = np.ones((canvas_size, canvas_size, 3), dtype=np.uint8) * 255
 
             if contours:
+                # Get bounding box for scaling and centering
                 all_pts = np.vstack(contours).squeeze()
                 x, y, w, h = cv2.boundingRect(all_pts)
+                scale = 0.9 * canvas_size / max(w, h)
+                offset_x = (canvas_size - scale * w) / 2
+                offset_y = (canvas_size - scale * h) / 2
 
-                scale = 0.9 * shape_canvas_size / max(w, h)
-                offset_x = (shape_canvas_size - scale * w) / 2
-                offset_y = padding_top + (shape_canvas_size - scale * h) / 2
+                # Transform and draw contours
+                transformed = [np.int32(scale * (cnt - [x, y]) + [offset_x, offset_y]) for cnt in contours]
+                cv2.drawContours(canvas, transformed, -1, (0, 0, 0), 2)
 
-                scaled_contours = [np.int32(scale * (cnt - [x, y]) + [offset_x, offset_y]) for cnt in contours]
-                cv2.drawContours(canvas, scaled_contours, -1, (0, 0, 0), thickness=2)
-
-            # Resize to 256x256
-            resized = cv2.resize(canvas, (256, 256), interpolation=cv2.INTER_AREA)
-
-            return resized
+            return canvas
 
         except Exception as e:
             print(f"[Shape.render] Failed to render frame: {e}")
             return None
 
 
-
-    
-    def close(self):
-        if self.viewer:
-            self.viewer = None
-
 ## Helper functions ##
 # Spline interpolation for 2D density problem
 def spline_interp(z, xk, yk, xg, yg):
     # Interpolate knots with bicubic spline
     tck = interpolate.bisplrep(xk, yk, z)
+    
     # Evaluate bicubic spline on (fixed) grid
     zint = interpolate.bisplev(xg[:,0], yg[0,:], tck)
+    
     # zint is between [-1, 1]
     zint = np.clip(zint, -1, 1)
-    # Convert spline values to binary image
-    C = 255/2; thresh = C
-    img = np.array(zint*C+C).astype('uint8')
-    # Thresholding give binary image, which gives better contour
-    _, thresh_img = cv2.threshold(img, thresh, 255, cv2.THRESH_BINARY)
+    
+    # ✅ Rescale to [0, 255] and apply binary threshold
+    img = ((zint + 1) * 127.5).astype('uint8')  # [-1,1] to [0,255]
+    _, thresh_img = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
     return thresh_img
+    
 
 def geometry_info_from_img(img):
     # Extract contours and calculate perimeter/area   

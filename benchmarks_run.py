@@ -5,7 +5,7 @@ import pandas as pd
 from utils import get_environment, setup_ocf_model
 from benchmarks.sb3_utils import setup_benchmark_model
 from tests import get_model_avg_final_vals
-from visual_helpers import save_render, make_video_from_frames
+from visual_helpers import write_video_frame, plot_reward_curve, make_video_from_frames
 import os
 
 
@@ -58,6 +58,8 @@ for i, m in enumerate(methods):
 result = collections.defaultdict(list)
 for env_name in env_names:
     env = get_environment(env_name, render_mode = 'rgb_array')
+    env.max_num_step = 100
+    env.step_size *= 3
     if env_name.startswith('naive'):
         avail_gammas = [DEFAULT_GAMMA]
     else:
@@ -82,19 +84,8 @@ for env_name in env_names:
             output_dir = f"renders/{env_name}_{method}"
             os.makedirs(output_dir, exist_ok=True)
             
-            state = env.reset()
-            for step in range(num_step_per_traj_dict[env_name]):
-                if benchmark_model:
-                    action, _ = model.predict(state)
-                else:
-                    action = model.get_action(state)
-
-                state, reward, done, _ = env.step(action)
-
-                if step % 2 == 0:
-                    save_render(env, step, output_dir)
-                if done:
-                    break
+            step = 0
+            
                 
             make_video_from_frames(output_dir, f"{output_dir}/evolution.mp4")
             result[env_name].append(0.0)  # placeholder for avg_final_vals

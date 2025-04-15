@@ -22,7 +22,7 @@ class Molecule(BBO):
         self.step_size = step_size 
         self.max_num_step = max_num_step
         self.num_step = 0
-        self.render_mode = render_mode
+        self.render_mode = render_mode or "human"
 
         # Molecule info
         self.pose = pose
@@ -96,32 +96,26 @@ class Molecule(BBO):
             phis = self.state[::2]
             psis = self.state[1::2]
 
-            # Step 1: Render the plot without a title
-            fig, ax = plt.subplots(figsize=(3, 3))
-            ax.scatter(phis, psis, c='blue')
+            # Render high-quality Ramachandran plot
+            fig, ax = plt.subplots(figsize=(4, 4), dpi=150)
+            ax.scatter(phis, psis, c='blue', s=20)
             ax.set_xlim(-180, 180)
             ax.set_ylim(-180, 180)
             ax.set_xlabel('Phi')
             ax.set_ylabel('Psi')
             ax.grid(True)
+            ax.set_title("Ramachandran Plot", fontsize=10)
 
             buf = io.BytesIO()
-            plt.savefig(buf, format='png', bbox_inches='tight')
+            plt.tight_layout()
+            plt.savefig(buf, format='png')
             plt.close(fig)
             buf.seek(0)
 
             image = Image.open(buf).convert('RGB')
-            frame = np.array(image)
-
-            # Step 2: Pad top with white space (for clearer text)
-            pad_top = 30  # pixels
-            padded_frame = np.ones((frame.shape[0] + pad_top, frame.shape[1], 3), dtype=np.uint8) * 255
-            padded_frame[pad_top:, :] = frame
-
-            return padded_frame
+            return np.array(image)
 
         return None
-
         
     def close(self):
         pass
