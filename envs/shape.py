@@ -11,7 +11,7 @@ ImgDim = namedtuple('ImgDim', 'width height')
 class Shape(BBO):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, naive=False, step_size=1e-2, state_dim=64, max_num_step=20):
+    def __init__(self, naive=False, step_size=1e-2, state_dim=64, max_num_step=20, render_mode=None):
         # Superclass setup
         super(Shape, self).__init__(naive, step_size, max_num_step)
 
@@ -25,10 +25,12 @@ class Shape(BBO):
 
         # Shape interpolation info
         self.xk, self.yk = np.mgrid[-1:1:8j, -1:1:8j]
-        self.xg, self.yg = np.mgrid[-1:1:50j, -1:1:50j]
-        self.viewer = ImgDim(width=self.xg.shape[0], height=self.yg.shape[1])
+        self.xg, self.yg = np.mgrid[-1:1:100j, -1:1:100j]
+        self.viewer = ImgDim(width=100, height=100)
         self.step_size = step_size
         self.max_num_step = max_num_step
+        
+        self.render_mode = render_mode or "human"
 
     def step(self, action):
         self.state += self.step_size *action
@@ -46,6 +48,9 @@ class Shape(BBO):
             val = 1e9
 
         reward = self.calculate_final_reward(val, action)
+        
+        self.latest_reward = reward
+        
         return np.array(self.state), reward, done, {}
     
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
@@ -72,8 +77,40 @@ class Shape(BBO):
         return np.array(self.state)
     
     def render(self):
-        xk, yk, xg, yg = self.xk, self.yk, self.xg, self.yg
-        return 255-spline_interp(self.state.reshape(xk.shape[0], yk.shape[0]), xk, yk, xg, yg)
+        try:
+            xk, yk, xg, yg = self.xk, self.yk, self.xg, self.yg
+            gray = 255 - spline_interp(self.state.reshape(xk.shape[0], yk.shape[0]), xk, yk, xg, yg)
+
+            # Find contours
+            contours, _ = cv2.findContours(gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            # Create a larger canvas with vertical padding
+            shape_canvas_size = 300
+            padding_top = 50
+            canvas = np.ones((shape_canvas_size + padding_top, shape_canvas_size, 3), dtype=np.uint8) * 255
+
+            if contours:
+                all_pts = np.vstack(contours).squeeze()
+                x, y, w, h = cv2.boundingRect(all_pts)
+
+                scale = 0.9 * shape_canvas_size / max(w, h)
+                offset_x = (shape_canvas_size - scale * w) / 2
+                offset_y = padding_top + (shape_canvas_size - scale * h) / 2
+
+                scaled_contours = [np.int32(scale * (cnt - [x, y]) + [offset_x, offset_y]) for cnt in contours]
+                cv2.drawContours(canvas, scaled_contours, -1, (0, 0, 0), thickness=2)
+
+            # Resize to 256x256
+            resized = cv2.resize(canvas, (256, 256), interpolation=cv2.INTER_AREA)
+
+            return resized
+
+        except Exception as e:
+            print(f"[Shape.render] Failed to render frame: {e}")
+            return None
+
+
+
     
     def close(self):
         if self.viewer:

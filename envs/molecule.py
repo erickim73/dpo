@@ -9,6 +9,7 @@ from envs.bbo import BBO
 import matplotlib.pyplot as plt
 import io
 from PIL import Image
+import cv2
 
 pyrosetta.init()
 
@@ -87,33 +88,40 @@ class Molecule(BBO):
 
     def render(self):
         for k in range(self.num_residue):
-            self.pose.set_phi(k+1, self.state[2*k]) 
-            self.pose.set_psi(k+1, self.state[2*k+1])
+            self.pose.set_phi(k + 1, self.state[2 * k]) 
+            self.pose.set_psi(k + 1, self.state[2 * k + 1])
         self.pmm.apply(self.pose)
 
         if self.render_mode == "rgb_array":
-            # Example placeholder: render a simple plot of phi/psi values
             phis = self.state[::2]
             psis = self.state[1::2]
 
+            # Step 1: Render the plot without a title
             fig, ax = plt.subplots(figsize=(3, 3))
             ax.scatter(phis, psis, c='blue')
             ax.set_xlim(-180, 180)
             ax.set_ylim(-180, 180)
             ax.set_xlabel('Phi')
             ax.set_ylabel('Psi')
-            ax.set_title('Ramachandran Plot')
             ax.grid(True)
 
             buf = io.BytesIO()
-            plt.tight_layout()
-            plt.savefig(buf, format='png')
+            plt.savefig(buf, format='png', bbox_inches='tight')
             plt.close(fig)
             buf.seek(0)
-            image = Image.open(buf).convert('RGB')
-            return np.array(image)
 
-        return None  # For render_mode=None or "human"
+            image = Image.open(buf).convert('RGB')
+            frame = np.array(image)
+
+            # Step 2: Pad top with white space (for clearer text)
+            pad_top = 30  # pixels
+            padded_frame = np.ones((frame.shape[0] + pad_top, frame.shape[1], 3), dtype=np.uint8) * 255
+            padded_frame[pad_top:, :] = frame
+
+            return padded_frame
+
+        return None
+
         
     def close(self):
         pass
