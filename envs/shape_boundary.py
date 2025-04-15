@@ -15,7 +15,7 @@ class ShapeBoundary(BBO):
         "render_fps": 15,
     }
 
-    def __init__(self, naive=False, step_size=1e-2, state_dim=16, max_num_step=20):
+    def __init__(self, naive=False, step_size=1e-2, state_dim=16, max_num_step=20, render_mode=None):
         # Superclass setup
         super(ShapeBoundary, self).__init__(naive, step_size, max_num_step)
 
@@ -41,6 +41,8 @@ class ShapeBoundary(BBO):
         self.screen = None
         self.clock = None
         self.isopen = True
+        self.render_mode = render_mode or "human"
+
 
     def step(self, action):
         self.state += self.step_size * action

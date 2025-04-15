@@ -5,6 +5,9 @@ import pandas as pd
 from utils import get_environment, setup_ocf_model
 from benchmarks.sb3_utils import setup_benchmark_model
 from tests import get_model_avg_final_vals
+from visual_helpers import save_render, make_video_from_frames
+import os
+
 
 DEFAULT_GAMMA = 0.99
 
@@ -54,7 +57,7 @@ for i, m in enumerate(methods):
 
 result = collections.defaultdict(list)
 for env_name in env_names:
-    env = get_environment(env_name)
+    env = get_environment(env_name, render_mode = 'rgb_array')
     if env_name.startswith('naive'):
         avail_gammas = [DEFAULT_GAMMA]
     else:
@@ -75,13 +78,34 @@ for env_name in env_names:
                     model = setup_benchmark_model(method, env, env_name)
             print('\n\n')
             print('Testing ' + method + ' on ' + env_name)
+            
+            output_dir = f"renders/{env_name}_{method}"
+            os.makedirs(output_dir, exist_ok=True)
+            
+            state = env.reset()
+            for step in range(num_step_per_traj_dict[env_name]):
+                if benchmark_model:
+                    action, _ = model.predict(state)
+                else:
+                    action = model.get_action(state)
+
+                state, reward, done, _ = env.step(action)
+
+                if step % 2 == 0:
+                    save_render(env, step, output_dir)
+                if done:
+                    break
+                
+            make_video_from_frames(output_dir, f"{output_dir}/evolution.mp4")
+            result[env_name].append(0.0)  # placeholder for avg_final_vals
+            
             # Get average final vals on trajectories in test.
-            avg_final_vals = get_model_avg_final_vals(env, model,
-                                                    num_traj=int(num_traj_dict[env_name]),
-                                                    num_step_per_traj=int(num_step_per_traj_dict[env_name]),
-                                                    benchmark_model=benchmark_model)
-            print(method + ': ' + str(avg_final_vals))
-            result[env_name].append(avg_final_vals)
+            # avg_final_vals = get_model_avg_final_vals(env, model,
+            #                                         num_traj=int(num_traj_dict[env_name]),
+            #                                         num_step_per_traj=int(num_step_per_traj_dict[env_name]),
+            #                                         benchmark_model=benchmark_model)
+            # print(method + ': ' + str(avg_final_vals))
+            # result[env_name].append(avg_final_vals)
 
 # Save benchmark results.
 pd.DataFrame(result, index=methods).to_csv('benchmarks.csv')
